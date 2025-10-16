@@ -72,3 +72,63 @@ def calculate_avg_yield_by_weather(crop_data, weather_condition):
     }
     
     return avg_yield_by_region
+
+
+
+# ==================================================
+# CALCULATION 2: compare_irrigation_fertilizer_effect()
+# ==================================================
+def compare_irrigation_fertilizer_effect(crop_data):
+    """
+    Analyzes average yields for four categories based on irrigation and 
+    fertilizer usage.
+    Uses Irrigation_Used (categorical), Fertilizer_Used (categorical), and 
+    Yield_tons_per_hectare (numerical).
+    
+    Addresses question: "Do crops that use both irrigation and fertilizer 
+    produce higher yields than those that use neither?"
+    
+    INPUT: crop_data (list of dicts)
+    OUTPUT: dict with four categories and their average yields
+    """
+    categories = {
+        "Both": [], 
+        "Only_Irrigation": [], 
+        "Only_Fertilizer": [], 
+        "Neither": []
+    }
+
+    for row in crop_data:
+        # Safely handle both string and boolean types
+        irr_val = row["Irrigation_Used"]
+        fert_val = row["Fertilizer_Used"]
+
+        # Normalize to boolean
+        if isinstance(irr_val, str):
+            irr = irr_val.strip().lower() == "yes"
+        else:
+            irr = bool(irr_val)
+
+        if isinstance(fert_val, str):
+            fert = fert_val.strip().lower() == "yes"
+        else:
+            fert = bool(fert_val)
+
+        # Categorize yields
+        if irr and fert:
+            categories["Both"].append(row["Yield_tons_per_hectare"])
+        elif irr and not fert:
+            categories["Only_Irrigation"].append(row["Yield_tons_per_hectare"])
+        elif fert and not irr:
+            categories["Only_Fertilizer"].append(row["Yield_tons_per_hectare"])
+        else:
+            categories["Neither"].append(row["Yield_tons_per_hectare"])
+
+    # Compute averages safely
+    yield_comparison = {
+        key: round(sum(vals) / len(vals), 2) if vals else 0
+        for key, vals in categories.items()
+    }
+
+    return yield_comparison
+
