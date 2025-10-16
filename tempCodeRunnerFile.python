@@ -1,0 +1,470 @@
+"""
+Name: Duli Kim
+Student ID: [Your ID]
+Email: [Your Email]
+Dataset: Agriculture Crop Yield
+Collaborators: None (solo project)
+AI Tools: ChatGPT (for structure + debugging)
+
+Function Attribution:
+- load_crop_data(): Duli Kim
+- calculate_avg_yield_by_weather(): Duli Kim
+- compare_irrigation_fertilizer_effect(): Duli Kim
+- calculate_avg_rainfall_temperature(): Duli Kim
+- calculate_yield_above_threshold(): Duli Kim
+- generate_report(): Duli Kim
+- test_calculate_avg_yield_by_weather(): Duli Kim
+- test_compare_irrigation_fertilizer_effect(): Duli Kim
+- test_calculate_avg_rainfall_temperature(): Duli Kim
+- test_calculate_yield_above_threshold(): Duli Kim
+"""
+
+# ==================================================
+# Required Libraries
+# ==================================================
+import kagglehub
+from kagglehub import KaggleDatasetAdapter
+import csv
+from collections import defaultdict
+
+# ==================================================
+# load_crop_data()
+# ==================================================
+def load_crop_data():
+    """
+    Loads the Agriculture Crop Yield dataset directly from Kaggle using kagglehub.
+    Converts it to a list of dictionaries for processing.
+    Converts numeric columns to appropriate data types.
+    
+    INPUT: None
+    OUTPUT: list of dictionaries with properly typed numeric values
+    """
+    print("Loading dataset from Kaggle...")
+
+    file_path = "crop_yield.csv"
+
+    df = kagglehub.load_dataset(
+        KaggleDatasetAdapter.PANDAS,
+        "samuelotiattakorah/agriculture-crop-yield",
+        file_path
+    )
+
+    print("✅ Dataset loaded successfully with", len(df), "records")
+
+    # Convert numeric columns to proper types
+    df["Rainfall_mm"] = df["Rainfall_mm"].astype(float)
+    df["Temperature_Celsius"] = df["Temperature_Celsius"].astype(float)
+    df["Yield_tons_per_hectare"] = df["Yield_tons_per_hectare"].astype(float)
+    df["Days_to_Harvest"] = df["Days_to_Harvest"].astype(int)
+
+    return df.to_dict(orient="records")
+
+
+# ==================================================
+# CALCULATION 1: calculate_avg_yield_by_weather()
+# ==================================================
+def calculate_avg_yield_by_weather(crop_data, weather_condition):
+    """
+    Calculates average yield per region for a given weather condition.
+    Uses Region (categorical), Weather_Condition (categorical), and 
+    Yield_tons_per_hectare (numerical).
+    
+    Addresses question: "Which region has the highest average yield under 
+    sunny conditions?"
+    
+    INPUT: crop_data (list of dicts), weather_condition (string)
+    OUTPUT: dict with regions and their average yields
+    """
+    region_yield = defaultdict(list)
+    
+    for row in crop_data:
+        if row["Weather_Condition"].lower() == weather_condition.lower():
+            region_yield[row["Region"]].append(row["Yield_tons_per_hectare"])
+
+    avg_yield_by_region = {
+        region: round(sum(vals) / len(vals), 2) 
+        for region, vals in region_yield.items() 
+        if vals
+    }
+    
+    return avg_yield_by_region
+
+
+# ==================================================
+# CALCULATION 2: compare_irrigation_fertilizer_effect()
+# ==================================================
+def compare_irrigation_fertilizer_effect(crop_data):
+    """
+    Analyzes average yields for four categories based on irrigation and 
+    fertilizer usage.
+    Uses Irrigation_Used (categorical), Fertilizer_Used (categorical), and 
+    Yield_tons_per_hectare (numerical).
+    
+    Addresses question: "Do crops that use both irrigation and fertilizer 
+    produce higher yields than those that use neither?"
+    
+    INPUT: crop_data (list of dicts)
+    OUTPUT: dict with four categories and their average yields
+    """
+    categories = {
+        "Both": [], 
+        "Only_Irrigation": [], 
+        "Only_Fertilizer": [], 
+        "Neither": []
+    }
+
+    for row in crop_data:
+        # Safely handle both string and boolean types
+        irr_val = row["Irrigation_Used"]
+        fert_val = row["Fertilizer_Used"]
+
+        # Normalize to boolean
+        if isinstance(irr_val, str):
+            irr = irr_val.strip().lower() == "yes"
+        else:
+            irr = bool(irr_val)
+
+        if isinstance(fert_val, str):
+            fert = fert_val.strip().lower() == "yes"
+        else:
+            fert = bool(fert_val)
+
+        # Categorize yields
+        if irr and fert:
+            categories["Both"].append(row["Yield_tons_per_hectare"])
+        elif irr and not fert:
+            categories["Only_Irrigation"].append(row["Yield_tons_per_hectare"])
+        elif fert and not irr:
+            categories["Only_Fertilizer"].append(row["Yield_tons_per_hectare"])
+        else:
+            categories["Neither"].append(row["Yield_tons_per_hectare"])
+
+    # Compute averages safely
+    yield_comparison = {
+        key: round(sum(vals) / len(vals), 2) if vals else 0
+        for key, vals in categories.items()
+    }
+
+    return yield_comparison
+
+
+# ==================================================
+# CALCULATION 3: calculate_avg_rainfall_temperature()
+# ==================================================
+def calculate_avg_rainfall_temperature(crop_data):
+    """
+    Calculates average rainfall and temperature for each crop type.
+    Uses Crop (categorical), Rainfall_mm (numerical), and 
+    Temperature_Celsius (numerical).
+    
+    Addresses question: "What is the average rainfall and temperature for 
+    each crop type?"
+    
+    INPUT: crop_data (list of dicts)
+    OUTPUT: dict with crops and their avg rainfall and temperature
+    """
+    crop_info = defaultdict(lambda: {"rainfall": [], "temperature": []})
+    
+    for row in crop_data:
+        crop_info[row["Crop"]]["rainfall"].append(row["Rainfall_mm"])
+        crop_info[row["Crop"]]["temperature"].append(row["Temperature_Celsius"])
+
+    crop_conditions = {
+        crop: {
+            "avg_rainfall": round(sum(vals["rainfall"]) / len(vals["rainfall"]), 2),
+            "avg_temperature": round(sum(vals["temperature"]) / len(vals["temperature"]), 2)
+        }
+        for crop, vals in crop_info.items()
+    }
+    
+    return crop_conditions
+
+
+# ==================================================
+# CALCULATION 4: calculate_yield_above_threshold()
+# ==================================================
+def calculate_yield_above_threshold(crop_data, threshold):
+    """
+    Calculates percentage of crops in each region with yield above a threshold.
+    Uses Region (categorical), Yield_tons_per_hectare (numerical), and 
+    Days_to_Harvest (numerical for context).
+    
+    Addresses question: "What percentage of harvest in each region has yield 
+    above X tons per hectare?"
+    
+    INPUT: crop_data (list of dicts), threshold (float)
+    OUTPUT: dict with regions and percentage of crops above threshold
+    """
+    region_stats = defaultdict(lambda: {"above": 0, "total": 0})
+    
+    for row in crop_data:
+        region = row["Region"]
+        yield_val = row["Yield_tons_per_hectare"]
+        
+        region_stats[region]["total"] += 1
+        if yield_val > threshold:
+            region_stats[region]["above"] += 1
+    
+    percentage_above = {
+        region: round((stats["above"] / stats["total"]) * 100, 2) 
+        if stats["total"] > 0 else 0
+        for region, stats in region_stats.items()
+    }
+    
+    return percentage_above
+
+
+# ==================================================
+# generate_report()
+# ==================================================
+def generate_report(avg_yield_by_region, yield_comparison, crop_conditions, 
+                   percentage_above, output_file):
+    """
+    Writes all calculation results to a CSV output file.
+    
+    INPUT: Four calculation results (dicts), output_file (string)
+    OUTPUT: None (writes to file)
+    """
+    with open(output_file, "w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+
+        # Calculation 1
+        writer.writerow(["=== Average Yield by Region (Sunny Conditions) ==="])
+        writer.writerow(["Region", "Avg Yield (tons/hectare)"])
+        for region, val in sorted(avg_yield_by_region.items()):
+            writer.writerow([region, val])
+
+        writer.writerow([])
+        
+        # Calculation 2
+        writer.writerow(["=== Yield Comparison: Irrigation vs Fertilizer ==="])
+        writer.writerow(["Condition", "Avg Yield (tons/hectare)"])
+        for condition, val in yield_comparison.items():
+            writer.writerow([condition, val])
+
+        writer.writerow([])
+        
+        # Calculation 3
+        writer.writerow(["=== Avg Rainfall & Temperature by Crop ==="])
+        writer.writerow(["Crop", "Avg Rainfall (mm)", "Avg Temperature (°C)"])
+        for crop, stats in sorted(crop_conditions.items()):
+            writer.writerow([crop, stats["avg_rainfall"], stats["avg_temperature"]])
+
+        writer.writerow([])
+        
+        # Calculation 4
+        writer.writerow(["=== Percentage of Yield Above 5 tons/hectare by Region ==="])
+        writer.writerow(["Region", "Percentage (%)"])
+        for region, pct in sorted(percentage_above.items()):
+            writer.writerow([region, pct])
+
+    print(f"📁 Report saved successfully as: {output_file}")
+
+
+# ==================================================
+# TEST FUNCTIONS
+# ==================================================
+
+def test_calculate_avg_yield_by_weather():
+    """
+    Test cases for calculate_avg_yield_by_weather()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_avg_yield_by_weather() ===")
+    
+    # General Test 1: Sunny weather exists in data
+    test_data_1 = [
+        {"Region": "North", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 5.0},
+        {"Region": "North", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 4.0},
+        {"Region": "South", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 6.0},
+    ]
+    result = calculate_avg_yield_by_weather(test_data_1, "Sunny")
+    assert result["North"] == 4.5, f"Expected 4.5, got {result['North']}"
+    assert result["South"] == 6.0, f"Expected 6.0, got {result['South']}"
+    print("✓ General Test 1 passed: Sunny weather calculation")
+    
+    # General Test 2: Case insensitivity
+    result = calculate_avg_yield_by_weather(test_data_1, "sunny")
+    assert "North" in result, "Case insensitivity failed"
+    print("✓ General Test 2 passed: Case insensitivity")
+    
+    # Edge Case 1: Weather condition not in dataset
+    result = calculate_avg_yield_by_weather(test_data_1, "Rainy")
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 1 passed: No matching weather condition")
+    
+    # Edge Case 2: Empty dataset
+    result = calculate_avg_yield_by_weather([], "Sunny")
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 2 passed: Empty dataset")
+
+
+def test_compare_irrigation_fertilizer_effect():
+    """
+    Test cases for compare_irrigation_fertilizer_effect()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing compare_irrigation_fertilizer_effect() ===")
+    
+    # General Test 1: Mixed usage patterns
+    test_data_1 = [
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 6.0},
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 6.0},
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "No", "Yield_tons_per_hectare": 4.0},
+        {"Irrigation_Used": "No", "Fertilizer_Used": "No", "Yield_tons_per_hectare": 2.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_1)
+    assert result["Both"] == 6.0, f"Expected 6.0, got {result['Both']}"
+    assert result["Only_Irrigation"] == 4.0, f"Expected 4.0, got {result['Only_Irrigation']}"
+    assert result["Neither"] == 2.0, f"Expected 2.0, got {result['Neither']}"
+    print("✓ General Test 1 passed: Mixed usage patterns")
+    
+    # General Test 2: Boolean values instead of strings
+    test_data_2 = [
+        {"Irrigation_Used": True, "Fertilizer_Used": True, "Yield_tons_per_hectare": 5.0},
+        {"Irrigation_Used": False, "Fertilizer_Used": False, "Yield_tons_per_hectare": 3.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_2)
+    assert result["Both"] == 5.0, f"Expected 5.0, got {result['Both']}"
+    assert result["Neither"] == 3.0, f"Expected 3.0, got {result['Neither']}"
+    print("✓ General Test 2 passed: Boolean values")
+    
+    # Edge Case 1: Empty dataset
+    result = compare_irrigation_fertilizer_effect([])
+    assert all(v == 0 for v in result.values()), "Expected all zeros for empty data"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Only one category has data
+    test_data_3 = [
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 7.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_3)
+    assert result["Both"] == 7.0 and result["Neither"] == 0, "Expected 7.0 for Both, 0 for others"
+    print("✓ Edge Case 2 passed: Only one category has data")
+
+
+def test_calculate_avg_rainfall_temperature():
+    """
+    Test cases for calculate_avg_rainfall_temperature()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_avg_rainfall_temperature() ===")
+    
+    # General Test 1: Multiple crops with consistent data
+    test_data_1 = [
+        {"Crop": "Wheat", "Rainfall_mm": 500.0, "Temperature_Celsius": 20.0},
+        {"Crop": "Wheat", "Rainfall_mm": 600.0, "Temperature_Celsius": 22.0},
+        {"Crop": "Rice", "Rainfall_mm": 800.0, "Temperature_Celsius": 25.0},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_1)
+    assert result["Wheat"]["avg_rainfall"] == 550.0, f"Expected 550.0, got {result['Wheat']['avg_rainfall']}"
+    assert result["Wheat"]["avg_temperature"] == 21.0, f"Expected 21.0, got {result['Wheat']['avg_temperature']}"
+    assert result["Rice"]["avg_rainfall"] == 800.0, f"Expected 800.0, got {result['Rice']['avg_rainfall']}"
+    print("✓ General Test 1 passed: Multiple crops")
+    
+    # General Test 2: Single entry per crop
+    test_data_2 = [
+        {"Crop": "Corn", "Rainfall_mm": 750.0, "Temperature_Celsius": 23.5},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_2)
+    assert result["Corn"]["avg_rainfall"] == 750.0, "Single entry should match value"
+    print("✓ General Test 2 passed: Single entry per crop")
+    
+    # Edge Case 1: Empty dataset
+    result = calculate_avg_rainfall_temperature([])
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Large variance in values
+    test_data_3 = [
+        {"Crop": "Barley", "Rainfall_mm": 100.0, "Temperature_Celsius": 5.0},
+        {"Crop": "Barley", "Rainfall_mm": 1000.0, "Temperature_Celsius": 35.0},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_3)
+    assert result["Barley"]["avg_rainfall"] == 550.0, "Average should handle large variance"
+    print("✓ Edge Case 2 passed: Large variance in values")
+
+
+def test_calculate_yield_above_threshold():
+    """
+    Test cases for calculate_yield_above_threshold()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_yield_above_threshold() ===")
+    
+    # General Test 1: Mixed yields above and below threshold
+    test_data_1 = [
+        {"Region": "North", "Yield_tons_per_hectare": 6.0, "Days_to_Harvest": 90},
+        {"Region": "North", "Yield_tons_per_hectare": 4.0, "Days_to_Harvest": 85},
+        {"Region": "South", "Yield_tons_per_hectare": 5.5, "Days_to_Harvest": 92},
+    ]
+    result = calculate_yield_above_threshold(test_data_1, 5.0)
+    assert result["North"] == 50.0, f"Expected 50.0%, got {result['North']}%"
+    assert result["South"] == 100.0, f"Expected 100.0%, got {result['South']}%"
+    print("✓ General Test 1 passed: Mixed yields")
+    
+    # General Test 2: All yields below threshold
+    test_data_2 = [
+        {"Region": "East", "Yield_tons_per_hectare": 2.0, "Days_to_Harvest": 88},
+        {"Region": "East", "Yield_tons_per_hectare": 3.0, "Days_to_Harvest": 88},
+    ]
+    result = calculate_yield_above_threshold(test_data_2, 5.0)
+    assert result["East"] == 0.0, "Expected 0.0% when all below threshold"
+    print("✓ General Test 2 passed: All below threshold")
+    
+    # Edge Case 1: Empty dataset
+    result = calculate_yield_above_threshold([], 5.0)
+    assert result == {}, "Expected empty dict for empty data"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Threshold equals exact yield value
+    test_data_3 = [
+        {"Region": "West", "Yield_tons_per_hectare": 5.0, "Days_to_Harvest": 90},
+    ]
+    result = calculate_yield_above_threshold(test_data_3, 5.0)
+    assert result["West"] == 0.0, "Yield equal to threshold should not be counted as above"
+    print("✓ Edge Case 2 passed: Threshold equals yield")
+
+
+# ==================================================
+# main()
+# ==================================================
+def main():
+    """
+    Main function that orchestrates the data analysis workflow.
+    """
+    crop_data = load_crop_data()
+
+    # Perform calculations
+    avg_yield_by_region = calculate_avg_yield_by_weather(crop_data, "Sunny")
+    yield_comparison = compare_irrigation_fertilizer_effect(crop_data)
+    crop_conditions = calculate_avg_rainfall_temperature(crop_data)
+    percentage_above = calculate_yield_above_threshold(crop_data, 5.0)
+
+    # Generate output report
+    generate_report(avg_yield_by_region, yield_comparison, crop_conditions, 
+                   percentage_above, "crop_yield_analysis.csv")
+    
+    print("✅ All calculations complete!")
+
+
+# ==================================================
+# Run Tests and Program
+# ==================================================
+if __name__ == "__main__":
+    # Run all test functions
+    test_calculate_avg_yield_by_weather()
+    test_compare_irrigation_fertilizer_effect()
+    test_calculate_avg_rainfall_temperature()
+    test_calculate_yield_above_threshold()
+    
+    print("\n" + "="*50)
+    print("All tests passed! Running main program...")
+    print("="*50 + "\n")
+    
+    # Run the main program
+    main()
