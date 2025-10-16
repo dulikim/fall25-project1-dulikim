@@ -278,3 +278,47 @@ def test_calculate_avg_yield_by_weather():
     result = calculate_avg_yield_by_weather([], "Sunny")
     assert result == {}, f"Expected empty dict, got {result}"
     print("✓ Edge Case 2 passed: Empty dataset")
+
+def test_compare_irrigation_fertilizer_effect():
+    """
+    Test cases for compare_irrigation_fertilizer_effect()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing compare_irrigation_fertilizer_effect() ===")
+    
+    # General Test 1: Mixed usage patterns
+    test_data_1 = [
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 6.0},
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 6.0},
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "No", "Yield_tons_per_hectare": 4.0},
+        {"Irrigation_Used": "No", "Fertilizer_Used": "No", "Yield_tons_per_hectare": 2.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_1)
+    assert result["Both"] == 6.0, f"Expected 6.0, got {result['Both']}"
+    assert result["Only_Irrigation"] == 4.0, f"Expected 4.0, got {result['Only_Irrigation']}"
+    assert result["Neither"] == 2.0, f"Expected 2.0, got {result['Neither']}"
+    print("✓ General Test 1 passed: Mixed usage patterns")
+    
+    # General Test 2: Boolean values instead of strings
+    test_data_2 = [
+        {"Irrigation_Used": True, "Fertilizer_Used": True, "Yield_tons_per_hectare": 5.0},
+        {"Irrigation_Used": False, "Fertilizer_Used": False, "Yield_tons_per_hectare": 3.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_2)
+    assert result["Both"] == 5.0, f"Expected 5.0, got {result['Both']}"
+    assert result["Neither"] == 3.0, f"Expected 3.0, got {result['Neither']}"
+    print("✓ General Test 2 passed: Boolean values")
+    
+    # Edge Case 1: Empty dataset
+    result = compare_irrigation_fertilizer_effect([])
+    assert all(v == 0 for v in result.values()), "Expected all zeros for empty data"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Only one category has data
+    test_data_3 = [
+        {"Irrigation_Used": "Yes", "Fertilizer_Used": "Yes", "Yield_tons_per_hectare": 7.0},
+    ]
+    result = compare_irrigation_fertilizer_effect(test_data_3)
+    assert result["Both"] == 7.0 and result["Neither"] == 0, "Expected 7.0 for Both, 0 for others"
+    print("✓ Edge Case 2 passed: Only one category has data")
