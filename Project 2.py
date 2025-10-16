@@ -239,3 +239,42 @@ def generate_report(avg_yield_by_region, yield_comparison, crop_conditions,
             writer.writerow([region, pct])
 
     print(f"📁 Report saved successfully as: {output_file}")
+
+
+# ==================================================
+# TEST FUNCTIONS
+# ==================================================
+
+def test_calculate_avg_yield_by_weather():
+    """
+    Test cases for calculate_avg_yield_by_weather()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_avg_yield_by_weather() ===")
+    
+    # General Test 1: Sunny weather exists in data
+    test_data_1 = [
+        {"Region": "North", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 5.0},
+        {"Region": "North", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 4.0},
+        {"Region": "South", "Weather_Condition": "Sunny", "Yield_tons_per_hectare": 6.0},
+    ]
+    result = calculate_avg_yield_by_weather(test_data_1, "Sunny")
+    assert result["North"] == 4.5, f"Expected 4.5, got {result['North']}"
+    assert result["South"] == 6.0, f"Expected 6.0, got {result['South']}"
+    print("✓ General Test 1 passed: Sunny weather calculation")
+    
+    # General Test 2: Case insensitivity
+    result = calculate_avg_yield_by_weather(test_data_1, "sunny")
+    assert "North" in result, "Case insensitivity failed"
+    print("✓ General Test 2 passed: Case insensitivity")
+    
+    # Edge Case 1: Weather condition not in dataset
+    result = calculate_avg_yield_by_weather(test_data_1, "Rainy")
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 1 passed: No matching weather condition")
+    
+    # Edge Case 2: Empty dataset
+    result = calculate_avg_yield_by_weather([], "Sunny")
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 2 passed: Empty dataset")
