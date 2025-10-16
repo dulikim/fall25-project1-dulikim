@@ -162,3 +162,37 @@ def calculate_avg_rainfall_temperature(crop_data):
     }
     
     return crop_conditions
+
+
+# ==================================================
+# CALCULATION 4: calculate_yield_above_threshold()
+# ==================================================
+def calculate_yield_above_threshold(crop_data, threshold):
+    """
+    Calculates percentage of crops in each region with yield above a threshold.
+    Uses Region (categorical), Yield_tons_per_hectare (numerical), and 
+    Days_to_Harvest (numerical for context).
+    
+    Addresses question: "What percentage of harvest in each region has yield 
+    above X tons per hectare?"
+    
+    INPUT: crop_data (list of dicts), threshold (float)
+    OUTPUT: dict with regions and percentage of crops above threshold
+    """
+    region_stats = defaultdict(lambda: {"above": 0, "total": 0})
+    
+    for row in crop_data:
+        region = row["Region"]
+        yield_val = row["Yield_tons_per_hectare"]
+        
+        region_stats[region]["total"] += 1
+        if yield_val > threshold:
+            region_stats[region]["above"] += 1
+    
+    percentage_above = {
+        region: round((stats["above"] / stats["total"]) * 100, 2) 
+        if stats["total"] > 0 else 0
+        for region, stats in region_stats.items()
+    }
+    
+    return percentage_above
