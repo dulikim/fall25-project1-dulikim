@@ -132,3 +132,33 @@ def compare_irrigation_fertilizer_effect(crop_data):
 
     return yield_comparison
 
+# ==================================================
+# CALCULATION 3: calculate_avg_rainfall_temperature()
+# ==================================================
+def calculate_avg_rainfall_temperature(crop_data):
+    """
+    Calculates average rainfall and temperature for each crop type.
+    Uses Crop (categorical), Rainfall_mm (numerical), and 
+    Temperature_Celsius (numerical).
+    
+    Addresses question: "What is the average rainfall and temperature for 
+    each crop type?"
+    
+    INPUT: crop_data (list of dicts)
+    OUTPUT: dict with crops and their avg rainfall and temperature
+    """
+    crop_info = defaultdict(lambda: {"rainfall": [], "temperature": []})
+    
+    for row in crop_data:
+        crop_info[row["Crop"]]["rainfall"].append(row["Rainfall_mm"])
+        crop_info[row["Crop"]]["temperature"].append(row["Temperature_Celsius"])
+
+    crop_conditions = {
+        crop: {
+            "avg_rainfall": round(sum(vals["rainfall"]) / len(vals["rainfall"]), 2),
+            "avg_temperature": round(sum(vals["temperature"]) / len(vals["temperature"]), 2)
+        }
+        for crop, vals in crop_info.items()
+    }
+    
+    return crop_conditions
