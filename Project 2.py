@@ -323,3 +323,125 @@ def test_compare_irrigation_fertilizer_effect():
     assert result["Both"] == 7.0 and result["Neither"] == 0, "Expected 7.0 for Both, 0 for others"
     print("✓ Edge Case 2 passed: Only one category has data")
 
+def test_calculate_avg_rainfall_temperature():
+    """
+    Test cases for calculate_avg_rainfall_temperature()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_avg_rainfall_temperature() ===")
+    
+    # General Test 1: Multiple crops with consistent data
+    test_data_1 = [
+        {"Crop": "Wheat", "Rainfall_mm": 500.0, "Temperature_Celsius": 20.0},
+        {"Crop": "Wheat", "Rainfall_mm": 600.0, "Temperature_Celsius": 22.0},
+        {"Crop": "Rice", "Rainfall_mm": 800.0, "Temperature_Celsius": 25.0},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_1)
+    assert result["Wheat"]["avg_rainfall"] == 550.0, f"Expected 550.0, got {result['Wheat']['avg_rainfall']}"
+    assert result["Wheat"]["avg_temperature"] == 21.0, f"Expected 21.0, got {result['Wheat']['avg_temperature']}"
+    assert result["Rice"]["avg_rainfall"] == 800.0, f"Expected 800.0, got {result['Rice']['avg_rainfall']}"
+    print("✓ General Test 1 passed: Multiple crops")
+    
+    # General Test 2: Single entry per crop
+    test_data_2 = [
+        {"Crop": "Corn", "Rainfall_mm": 750.0, "Temperature_Celsius": 23.5},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_2)
+    assert result["Corn"]["avg_rainfall"] == 750.0, "Single entry should match value"
+    print("✓ General Test 2 passed: Single entry per crop")
+    
+    # Edge Case 1: Empty dataset
+    result = calculate_avg_rainfall_temperature([])
+    assert result == {}, f"Expected empty dict, got {result}"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Large variance in values
+    test_data_3 = [
+        {"Crop": "Barley", "Rainfall_mm": 100.0, "Temperature_Celsius": 5.0},
+        {"Crop": "Barley", "Rainfall_mm": 1000.0, "Temperature_Celsius": 35.0},
+    ]
+    result = calculate_avg_rainfall_temperature(test_data_3)
+    assert result["Barley"]["avg_rainfall"] == 550.0, "Average should handle large variance"
+    print("✓ Edge Case 2 passed: Large variance in values")
+
+def test_calculate_yield_above_threshold():
+    """
+    Test cases for calculate_yield_above_threshold()
+    - 2 general cases
+    - 2 edge cases
+    """
+    print("\n=== Testing calculate_yield_above_threshold() ===")
+    
+    # General Test 1: Mixed yields above and below threshold
+    test_data_1 = [
+        {"Region": "North", "Yield_tons_per_hectare": 6.0, "Days_to_Harvest": 90},
+        {"Region": "North", "Yield_tons_per_hectare": 4.0, "Days_to_Harvest": 85},
+        {"Region": "South", "Yield_tons_per_hectare": 5.5, "Days_to_Harvest": 92},
+    ]
+    result = calculate_yield_above_threshold(test_data_1, 5.0)
+    assert result["North"] == 50.0, f"Expected 50.0%, got {result['North']}%"
+    assert result["South"] == 100.0, f"Expected 100.0%, got {result['South']}%"
+    print("✓ General Test 1 passed: Mixed yields")
+    
+    # General Test 2: All yields below threshold
+    test_data_2 = [
+        {"Region": "East", "Yield_tons_per_hectare": 2.0, "Days_to_Harvest": 88},
+        {"Region": "East", "Yield_tons_per_hectare": 3.0, "Days_to_Harvest": 88},
+    ]
+    result = calculate_yield_above_threshold(test_data_2, 5.0)
+    assert result["East"] == 0.0, "Expected 0.0% when all below threshold"
+    print("✓ General Test 2 passed: All below threshold")
+    
+    # Edge Case 1: Empty dataset
+    result = calculate_yield_above_threshold([], 5.0)
+    assert result == {}, "Expected empty dict for empty data"
+    print("✓ Edge Case 1 passed: Empty dataset")
+    
+    # Edge Case 2: Threshold equals exact yield value
+    test_data_3 = [
+        {"Region": "West", "Yield_tons_per_hectare": 5.0, "Days_to_Harvest": 90},
+    ]
+    result = calculate_yield_above_threshold(test_data_3, 5.0)
+    assert result["West"] == 0.0, "Yield equal to threshold should not be counted as above"
+    print("✓ Edge Case 2 passed: Threshold equals yield")
+
+
+# ==================================================
+# main()
+# ==================================================
+def main():
+    """
+    Main function that orchestrates the data analysis workflow.
+    """
+    crop_data = load_crop_data()
+
+    # Perform calculations
+    avg_yield_by_region = calculate_avg_yield_by_weather(crop_data, "Sunny")
+    yield_comparison = compare_irrigation_fertilizer_effect(crop_data)
+    crop_conditions = calculate_avg_rainfall_temperature(crop_data)
+    percentage_above = calculate_yield_above_threshold(crop_data, 5.0)
+
+    # Generate output report
+    generate_report(avg_yield_by_region, yield_comparison, crop_conditions, 
+                   percentage_above, "crop_yield_analysis.csv")
+    
+    print("✅ All calculations complete!")
+
+
+# ==================================================
+# Run Tests and Program
+# ==================================================
+if __name__ == "__main__":
+    # Run all test functions
+    test_calculate_avg_yield_by_weather()
+    test_compare_irrigation_fertilizer_effect()
+    test_calculate_avg_rainfall_temperature()
+    test_calculate_yield_above_threshold()
+    
+    print("\n" + "="*50)
+    print("All tests passed! Running main program...")
+    print("="*50 + "\n")
+    
+    # Run the main program
+    main()
