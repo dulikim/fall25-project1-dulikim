@@ -42,3 +42,33 @@ def load_crop_data():
     df["Days_to_Harvest"] = df["Days_to_Harvest"].astype(int)
 
     return df.to_dict(orient="records")
+
+
+# ==================================================
+# CALCULATION 1: calculate_avg_yield_by_weather()
+# ==================================================
+def calculate_avg_yield_by_weather(crop_data, weather_condition):
+    """
+    Calculates average yield per region for a given weather condition.
+    Uses Region (categorical), Weather_Condition (categorical), and 
+    Yield_tons_per_hectare (numerical).
+    
+    Addresses question: "Which region has the highest average yield under 
+    sunny conditions?"
+    
+    INPUT: crop_data (list of dicts), weather_condition (string)
+    OUTPUT: dict with regions and their average yields
+    """
+    region_yield = defaultdict(list)
+    
+    for row in crop_data:
+        if row["Weather_Condition"].lower() == weather_condition.lower():
+            region_yield[row["Region"]].append(row["Yield_tons_per_hectare"])
+
+    avg_yield_by_region = {
+        region: round(sum(vals) / len(vals), 2) 
+        for region, vals in region_yield.items() 
+        if vals
+    }
+    
+    return avg_yield_by_region
