@@ -322,3 +322,4 @@ def test_compare_irrigation_fertilizer_effect():
     result = compare_irrigation_fertilizer_effect(test_data_3)
     assert result["Both"] == 7.0 and result["Neither"] == 0, "Expected 7.0 for Both, 0 for others"
     print("✓ Edge Case 2 passed: Only one category has data")
+
