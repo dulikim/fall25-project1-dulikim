@@ -196,3 +196,46 @@ def calculate_yield_above_threshold(crop_data, threshold):
     }
     
     return percentage_above
+
+def generate_report(avg_yield_by_region, yield_comparison, crop_conditions, 
+                   percentage_above, output_file):
+    """
+    Writes all calculation results to a CSV output file.
+    
+    INPUT: Four calculation results (dicts), output_file (string)
+    OUTPUT: None (writes to file)
+    """
+    with open(output_file, "w", newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+
+        # Calculation 1
+        writer.writerow(["=== Average Yield by Region (Sunny Conditions) ==="])
+        writer.writerow(["Region", "Avg Yield (tons/hectare)"])
+        for region, val in sorted(avg_yield_by_region.items()):
+            writer.writerow([region, val])
+
+        writer.writerow([])
+        
+        # Calculation 2
+        writer.writerow(["=== Yield Comparison: Irrigation vs Fertilizer ==="])
+        writer.writerow(["Condition", "Avg Yield (tons/hectare)"])
+        for condition, val in yield_comparison.items():
+            writer.writerow([condition, val])
+
+        writer.writerow([])
+        
+        # Calculation 3
+        writer.writerow(["=== Avg Rainfall & Temperature by Crop ==="])
+        writer.writerow(["Crop", "Avg Rainfall (mm)", "Avg Temperature (°C)"])
+        for crop, stats in sorted(crop_conditions.items()):
+            writer.writerow([crop, stats["avg_rainfall"], stats["avg_temperature"]])
+
+        writer.writerow([])
+        
+        # Calculation 4
+        writer.writerow(["=== Percentage of Yield Above 5 tons/hectare by Region ==="])
+        writer.writerow(["Region", "Percentage (%)"])
+        for region, pct in sorted(percentage_above.items()):
+            writer.writerow([region, pct])
+
+    print(f"📁 Report saved successfully as: {output_file}")
